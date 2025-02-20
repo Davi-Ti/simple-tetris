@@ -186,9 +186,19 @@ function rotate() {
 		piece.shape.map((row) => row[i]).reverse()
 	);
 	const previousShape = piece.shape;
+	const previousX = piece.x;
 	piece.shape = rotated;
 	if (collisionTest(piece.x, piece.y)) {
+		// Try shifting the piece horizontally (wall kick)
+		for (let offset of [1, -1, 2, -2]) {
+			if (!collisionTest(piece.x + offset, piece.y)) {
+				piece.x += offset;
+				return;
+			}
+		}
+		// If no valid position, revert rotation.
 		piece.shape = previousShape;
+		piece.x = previousX;
 	}
 }
 
@@ -292,7 +302,12 @@ document.addEventListener("keydown", (event) => {
 			while (!collisionTest(piece.x, piece.y + 1)) {
 				piece.y++;
 			}
-			dropCounter = dropInterval; // força a mesclagem na próxima atualização
+			merge();
+			clearLines();
+			piece = nextPiece;
+			nextPiece = createPiece();
+			drawNextPiece();
+			dropCounter = 0;
 			break;
 		case 80: // "P" para pausar/retomar
 			togglePause();
@@ -348,7 +363,12 @@ document
 		while (!collisionTest(piece.x, piece.y + 1)) {
 			piece.y++;
 		}
-		dropCounter = dropInterval;
+		merge();
+		clearLines();
+		piece = nextPiece;
+		nextPiece = createPiece();
+		drawNextPiece();
+		dropCounter = 0;
 	});
 
 // Overlay de Pausa / Game Over
