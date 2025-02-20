@@ -24,11 +24,9 @@
 				Score: <span id="score">0</span>
 			</div>
 			<div id="highscore-info" class="text-lg">
-				High Score: <span id="highscore">0</span>
+				Best: <span id="highscore">0</span>
 			</div>
-			<div id="level-info" class="text-lg">
-				Level: <span id="level">1</span>
-			</div>
+			<div id="level-info" class="text-lg">LV: <span id="level">1</span></div>
 		</header>
 
 		<!-- Wrapper para o conteúdo do jogo (centralizado) -->
@@ -50,12 +48,9 @@
 				<div id="next-piece-container" class="flex flex-col items-center gap-2">
 					<!-- O texto "Next Piece:" ficará oculto em mobile -->
 					<div class="hidden md:block">Next Piece:</div>
-					<canvas
-						id="next"
-						width="100"
-						height="100"
-						class="border-2 border-white"
-					></canvas>
+					<canvas id="next" width="100" height="60" <!-- Reduced height -->
+						class="border-2 border-white" ></canvas
+					>
 				</div>
 			</div>
 		</div>
@@ -67,13 +62,13 @@
 			<!-- Coluna Esquerda: Rotate (canto superior esquerdo) e Left (canto inferior esquerdo) -->
 			<div class="flex flex-col items-start space-y-4">
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
+					class="mobile-btn bg-gray-700 p-5 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-rotate"
 				>
 					↻
 				</button>
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
+					class="mobile-btn bg-gray-700 px-8 py-5 rounded-full text-4xl font-extrabold hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-left"
 				>
 					←
@@ -82,22 +77,22 @@
 			<!-- Botão Central: Hard Drop -->
 			<div class="absolute left-1/2 transform -translate-x-1/2 bottom-20">
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
+					class="mobile-btn bg-gray-700 py-2 px-5 font-extrabold rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-hard-drop"
 				>
-					⤓
+					⤓⤓
 				</button>
 			</div>
 			<!-- Coluna Direita: Down (canto superior direito) e Right (canto inferior direito) -->
 			<div class="flex flex-col items-end space-y-4">
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
+					class="mobile-btn bg-gray-700 p-5 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-down"
 				>
 					↓
 				</button>
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
+					class="mobile-btn bg-gray-700 px-8 py-5 rounded-full text-4xl font-extrabold hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-right"
 				>
 					→

@@ -145,11 +145,21 @@ function drawNextPiece() {
 	nextCtx.fillStyle = nextPiece.color;
 	const scale = 0.6;
 	const size = BLOCK_SIZE * scale;
-	const offset = (nextCanvas.width - nextPiece.shape[0].length * size) / 2;
+	// Calculates horizontal centering.
+	const horizontalOffset =
+		(nextCanvas.width - nextPiece.shape[0].length * size) / 2;
+	// Align the piece to the bottom.
+	const pieceHeightInPixels = nextPiece.shape.length * size;
+	const verticalOffset = nextCanvas.height - pieceHeightInPixels;
 	nextPiece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
 			if (value) {
-				nextCtx.fillRect(offset + x * size, y * size, size - 1, size - 1);
+				nextCtx.fillRect(
+					horizontalOffset + x * size,
+					verticalOffset + y * size,
+					size - 1,
+					size - 1
+				);
 			}
 		});
 	});
