@@ -1,0 +1,4 @@
+/* Custom: Para garantir que os blocos fiquem com aparência pixelada */
+canvas {
+	image-rendering: pixelated;
+}
