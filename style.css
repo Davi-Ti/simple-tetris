@@ -1,4 +1,13 @@
-/* Custom: Para garantir que os blocos fiquem com aparência pixelada */
+/* style.css */
 canvas {
-	image-rendering: pixelated;
+	background-color: rgba(0, 0, 0, 0.8);
+}
+
+.mobile-btn {
+	touch-action: manipulation;
+	user-select: none;
+}
+
+#overlay {
+	display: none;
 }
