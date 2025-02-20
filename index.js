@@ -84,13 +84,13 @@ function createPiece() {
 	return new Piece(PIECES[index], COLORS[index]);
 }
 
-// Função de colisão que converte as coordenadas da peça para índices do tabuleiro
+// Função de colisão: converte as coordenadas da peça para índices do tabuleiro
 function collision(piece, testX, testY) {
 	return piece.shape.some((row, y) => {
 		return row.some((value, x) => {
 			if (!value) return false;
 			const boardX = testX + x;
-			// Converte a posição da peça para o índice real no board
+			// Calcula o índice real no board (considerando as linhas ocultas)
 			const boardY = testY + y + HIDDEN_ROWS;
 			return (
 				boardX < 0 ||
@@ -186,25 +186,17 @@ function drawNextPiece() {
 	});
 }
 
+// ——— O merge agora simplesmente grava os blocos no board ———
 function merge() {
-	let gameOverTriggered = false;
 	piece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
 			if (value) {
 				const boardX = piece.x + x;
 				const boardY = piece.y + y + HIDDEN_ROWS;
-				// Se a peça lockar em uma linha acima da visível, dispara game over
-				if (boardY < HIDDEN_ROWS) {
-					gameOverTriggered = true;
-				} else {
-					board[boardY][boardX] = piece.color;
-				}
+				board[boardY][boardX] = piece.color;
 			}
 		});
 	});
-	if (gameOverTriggered) {
-		gameOver();
-	}
 }
 
 function rotate() {
@@ -288,13 +280,12 @@ function update(time = 0) {
 		lockDelay += deltaTime;
 		if (lockDelay >= LOCK_DELAY_TIME) {
 			merge();
-			if (paused) return; // se game over foi disparado durante o merge
 			clearLines();
 			piece = nextPiece;
 			nextPiece = createPiece();
 			drawNextPiece();
 			lockDelay = 0;
-			// Se a nova peça, ao spawnar, já colide na área visível, dispara game over
+			// Se a nova peça, ao spawnar, já colide, dispara game over
 			if (collision(piece, piece.x, piece.y)) {
 				gameOver();
 			}
