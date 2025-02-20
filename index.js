@@ -66,12 +66,14 @@ let dropInterval = 1000; // intervalo inicial (ms)
 let lastTime = 0;
 let paused = false;
 
+// Classe da peça
 class Piece {
 	constructor(shape, color) {
 		this.shape = shape;
 		this.color = color;
+		// Centraliza horizontalmente e inicia com um deslocamento vertical
 		this.x = Math.floor(BOARD_WIDTH / 2) - Math.floor(shape[0].length / 2);
-		this.y = 0;
+		this.y = -1; // Inicia acima da área visível (zona de spawn oculta)
 	}
 }
 
@@ -102,7 +104,8 @@ function drawPiece() {
 	ctx.fillStyle = piece.color;
 	piece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
-			if (value) {
+			// Só desenha se estiver dentro da área visível
+			if (value && piece.y + y >= 0) {
 				ctx.fillRect(
 					(piece.x + x) * BLOCK_SIZE,
 					(piece.y + y) * BLOCK_SIZE,
@@ -122,7 +125,8 @@ function drawGhostPiece() {
 	ctx.fillStyle = hexToRgba(piece.color, 0.3);
 	piece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
-			if (value) {
+			// Desenha apenas os blocos que estejam dentro da área visível
+			if (value && ghostY + y >= 0) {
 				ctx.fillRect(
 					(piece.x + x) * BLOCK_SIZE,
 					(ghostY + y) * BLOCK_SIZE,
@@ -163,6 +167,8 @@ function collisionTest(testX, testY) {
 			if (!value) return false;
 			const newX = testX + x;
 			const newY = testY + y;
+			// Para newY negativo, ignora colisão (zona de spawn oculta)
+			if (newY < 0) return false;
 			return (
 				newX < 0 ||
 				newX >= BOARD_WIDTH ||
@@ -174,18 +180,27 @@ function collisionTest(testX, testY) {
 }
 
 function merge() {
+	let gameOverTriggered = false;
 	piece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
 			if (value) {
-				board[piece.y + y][piece.x + x] = piece.color;
+				// Se alguma parte da peça for mesclada acima da área visível, é game over
+				if (piece.y + y < 0) {
+					gameOverTriggered = true;
+				} else {
+					board[piece.y + y][piece.x + x] = piece.color;
+				}
 			}
 		});
 	});
+	if (gameOverTriggered) {
+		gameOver();
+	}
 }
 
 function rotate() {
 	const rotated = piece.shape[0].map((_, i) =>
-	  piece.shape.map((row) => row[i]).reverse()
+		piece.shape.map((row) => row[i]).reverse()
 	);
 	const oldX = piece.x;
 	const oldShape = piece.shape;
@@ -193,21 +208,21 @@ function rotate() {
 	const offsets = [0, -1, 1, -2, 2];
 	let kickSuccess = false;
 	for (let offset of offsets) {
-	  piece.x = oldX + offset;
-	  piece.shape = rotated;
-	  if (!collisionTest(piece.x, piece.y)) {
-		kickSuccess = true;
-		// Se houver rotação bem-sucedida, reinicia o lockDelay
-		lockDelay = 0;
-		break;
-	  }
+		piece.x = oldX + offset;
+		piece.shape = rotated;
+		if (!collisionTest(piece.x, piece.y)) {
+			kickSuccess = true;
+			// Se houver rotação bem-sucedida, reinicia o lockDelay
+			lockDelay = 0;
+			break;
+		}
 	}
 	if (!kickSuccess) {
-	  // Reverte a rotação e a posição, se nenhum deslocamento funcionar
-	  piece.shape = oldShape;
-	  piece.x = oldX;
+		// Reverte a rotação e a posição, se nenhum deslocamento funcionar
+		piece.shape = oldShape;
+		piece.x = oldX;
 	}
-  }
+}
 
 function clearLines() {
 	let linesCleared = 0;
@@ -255,78 +270,78 @@ function resetGame() {
 }
 
 function update(time = 0) {
-    if (paused) {
-      requestAnimationFrame(update);
-      return;
-    }
-    const deltaTime = time - lastTime;
-    lastTime = time;
-    dropCounter += deltaTime;
-  
-    if (collisionTest(piece.x, piece.y + 1)) {
-        lockDelay += deltaTime;
-        if (lockDelay >= LOCK_DELAY_TIME) {
-            merge();
-            clearLines();
-            piece = nextPiece;
-            nextPiece = createPiece();
-            drawNextPiece();
-            lockDelay = 0;
-            if (collisionTest(piece.x, piece.y)) {
-                gameOver();
-            }
-        }
-    } else {
-        lockDelay = 0;
-        if (dropCounter > dropInterval) {
-            piece.y++;
-            dropCounter = 0;
-        }
-    }
-    drawBoard();
-    drawGhostPiece();
-    drawPiece();
-    requestAnimationFrame(update);
+	if (paused) {
+		requestAnimationFrame(update);
+		return;
+	}
+	const deltaTime = time - lastTime;
+	lastTime = time;
+	dropCounter += deltaTime;
+
+	if (collisionTest(piece.x, piece.y + 1)) {
+		lockDelay += deltaTime;
+		if (lockDelay >= LOCK_DELAY_TIME) {
+			merge();
+			// Se o gameOver já foi disparado durante o merge, interrompe a atualização
+			if (paused) return;
+			clearLines();
+			piece = nextPiece;
+			nextPiece = createPiece();
+			drawNextPiece();
+			lockDelay = 0;
+			// Verifica se a nova peça, ao spawnar, já colide com o tabuleiro visível
+			if (collisionTest(piece.x, piece.y)) {
+				gameOver();
+			}
+		}
+	} else {
+		lockDelay = 0;
+		if (dropCounter > dropInterval) {
+			piece.y++;
+			dropCounter = 0;
+		}
+	}
+	drawBoard();
+	drawGhostPiece();
+	drawPiece();
+	requestAnimationFrame(update);
 }
-
-
-  
 
 // Controles de teclado
 document.addEventListener("keydown", (event) => {
-    if (paused && event.key.toLowerCase() !== "p") return;
+	if (paused && event.key.toLowerCase() !== "p") return;
 
-    switch (event.keyCode) {
-        case 37: // Esquerda
-            piece.x--;
-            if (collisionTest(piece.x, piece.y)) piece.x++;
-            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0; // reinicia o lockDelay se encostada
-            break;
-        case 39: // Direita
-            piece.x++;
-            if (collisionTest(piece.x, piece.y)) piece.x--;
-            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
-            break;
-        case 40: // Soft Drop
-            piece.y++;
-            if (collisionTest(piece.x, piece.y)) piece.y--;
-            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
-            dropCounter = 0;
-            break;
-        case 38: // Rotacionar
-            rotate();
-            // Dentro da função rotate já reiniciamos o lockDelay se a rotação for bem-sucedida
-            break;
-        case 32: // Hard Drop
-            while (!collisionTest(piece.x, piece.y + 1)) {
-                piece.y++;
-            }
-            dropCounter = dropInterval;
-            break;
-        case 80: // Pausar/retomar
-            togglePause();
-            break;
-    }
+	switch (event.keyCode) {
+		case 37: // Esquerda
+			piece.x--;
+			if (collisionTest(piece.x, piece.y)) piece.x++;
+			else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0; // reinicia o lockDelay se encostada
+			break;
+		case 39: // Direita
+			piece.x++;
+			if (collisionTest(piece.x, piece.y)) piece.x--;
+			else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
+			break;
+		case 40: // Soft Drop
+			piece.y++;
+			if (collisionTest(piece.x, piece.y)) piece.y--;
+			else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
+			dropCounter = 0;
+			break;
+		case 38: // Rotacionar
+			rotate();
+			// Dentro da função rotate já reiniciamos o lockDelay se a rotação for bem-sucedida
+			break;
+		case 32: // Hard Drop
+			while (!collisionTest(piece.x, piece.y + 1)) {
+				piece.y++;
+			}
+			dropCounter = dropInterval;
+			break;
+		case 80: // Pausar/retomar
+			togglePause();
+			break;
+	}
 });
 
 // Controles Mobile
