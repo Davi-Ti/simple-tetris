@@ -45,12 +45,18 @@
 					width="300"
 					height="600"
 				></canvas>
-				<div id="next-piece-container" class="flex flex-col items-center gap-2">
+				<div
+					id="next-piece-container"
+					class="fixed bottom-5 left-1/2 -translate-x-1/2 md:translate-x-0 flex flex-col items-center gap-2 md:static md:flex md:items-center md:gap-2"
+				>
 					<!-- O texto "Next Piece:" ficará oculto em mobile -->
 					<div class="hidden md:block">Next Piece:</div>
-					<canvas id="next" width="100" height="60" <!-- Reduced height -->
-						class="border-2 border-white" ></canvas
-					>
+					<canvas
+						id="next"
+						width="100"
+						height="60"
+						class="border-2 border-white"
+					></canvas>
 				</div>
 			</div>
 		</div>
@@ -75,7 +81,7 @@
 				</button>
 			</div>
 			<!-- Botão Central: Hard Drop -->
-			<div class="absolute left-1/2 transform -translate-x-1/2 bottom-20">
+			<div class="absolute left-1/2 transform -translate-x-1/2 bottom-16">
 				<button
 					class="mobile-btn bg-gray-700 py-2 px-5 font-extrabold rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-hard-drop"
