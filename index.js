@@ -7,8 +7,11 @@ const nextCtx = nextCanvas.getContext("2d");
 const BLOCK_SIZE = 30;
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
+const HIDDEN_ROWS = 2; // Linhas ocultas para spawn
+const TOTAL_ROWS = BOARD_HEIGHT + HIDDEN_ROWS;
 canvas.width = BLOCK_SIZE * BOARD_WIDTH;
-canvas.height = BLOCK_SIZE * BOARD_HEIGHT;
+canvas.height = BLOCK_SIZE * BOARD_HEIGHT; // desenha apenas as linhas visíveis
+
 let lockDelay = 0;
 const LOCK_DELAY_TIME = 200; // tempo em ms
 
@@ -56,9 +59,9 @@ const COLORS = [
 	"#f00000",
 ];
 
-let board = Array.from({ length: BOARD_HEIGHT }, () =>
-	Array(BOARD_WIDTH).fill(0)
-);
+// Cria um tabuleiro com TOTAL_ROWS linhas (incluindo as ocultas)
+let board = Array.from({ length: TOTAL_ROWS }, () => Array(BOARD_WIDTH).fill(0));
+
 let piece = null;
 let nextPiece = null;
 let dropCounter = 0;
@@ -66,14 +69,13 @@ let dropInterval = 1000; // intervalo inicial (ms)
 let lastTime = 0;
 let paused = false;
 
-// Classe da peça
 class Piece {
 	constructor(shape, color) {
 		this.shape = shape;
 		this.color = color;
-		// Centraliza horizontalmente e inicia com um deslocamento vertical
+		// Centraliza horizontalmente e spawn na zona oculta
 		this.x = Math.floor(BOARD_WIDTH / 2) - Math.floor(shape[0].length / 2);
-		this.y = -1; // Inicia acima da área visível (zona de spawn oculta)
+		this.y = -HIDDEN_ROWS;
 	}
 }
 
@@ -82,16 +84,35 @@ function createPiece() {
 	return new Piece(PIECES[index], COLORS[index]);
 }
 
+// Função de colisão que converte as coordenadas da peça para índices do tabuleiro
+function collision(piece, testX, testY) {
+	return piece.shape.some((row, y) => {
+		return row.some((value, x) => {
+			if (!value) return false;
+			const boardX = testX + x;
+			// Converte a posição da peça para o índice real no board
+			const boardY = testY + y + HIDDEN_ROWS;
+			return (
+				boardX < 0 ||
+				boardX >= BOARD_WIDTH ||
+				boardY >= TOTAL_ROWS ||
+				(boardY >= 0 && board[boardY][boardX])
+			);
+		});
+	});
+}
+
 function drawBoard() {
 	ctx.fillStyle = "#000";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	for (let y = 0; y < BOARD_HEIGHT; y++) {
+	// Desenha somente as linhas visíveis (de HIDDEN_ROWS até TOTAL_ROWS-1)
+	for (let y = HIDDEN_ROWS; y < TOTAL_ROWS; y++) {
 		for (let x = 0; x < BOARD_WIDTH; x++) {
 			if (board[y][x]) {
 				ctx.fillStyle = board[y][x];
 				ctx.fillRect(
 					x * BLOCK_SIZE,
-					y * BLOCK_SIZE,
+					(y - HIDDEN_ROWS) * BLOCK_SIZE,
 					BLOCK_SIZE - 1,
 					BLOCK_SIZE - 1
 				);
@@ -104,14 +125,16 @@ function drawPiece() {
 	ctx.fillStyle = piece.color;
 	piece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
-			// Só desenha se estiver dentro da área visível
-			if (value && piece.y + y >= 0) {
-				ctx.fillRect(
-					(piece.x + x) * BLOCK_SIZE,
-					(piece.y + y) * BLOCK_SIZE,
-					BLOCK_SIZE - 1,
-					BLOCK_SIZE - 1
-				);
+			if (value) {
+				const drawY = piece.y + y + HIDDEN_ROWS;
+				if (drawY >= HIDDEN_ROWS && drawY < TOTAL_ROWS) {
+					ctx.fillRect(
+						(piece.x + x) * BLOCK_SIZE,
+						(drawY - HIDDEN_ROWS) * BLOCK_SIZE,
+						BLOCK_SIZE - 1,
+						BLOCK_SIZE - 1
+					);
+				}
 			}
 		});
 	});
@@ -119,20 +142,22 @@ function drawPiece() {
 
 function drawGhostPiece() {
 	let ghostY = piece.y;
-	while (!collisionTest(piece.x, ghostY + 1)) {
+	while (!collision(piece, piece.x, ghostY + 1)) {
 		ghostY++;
 	}
 	ctx.fillStyle = hexToRgba(piece.color, 0.3);
 	piece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
-			// Desenha apenas os blocos que estejam dentro da área visível
-			if (value && ghostY + y >= 0) {
-				ctx.fillRect(
-					(piece.x + x) * BLOCK_SIZE,
-					(ghostY + y) * BLOCK_SIZE,
-					BLOCK_SIZE - 1,
-					BLOCK_SIZE - 1
-				);
+			if (value) {
+				const drawY = ghostY + y + HIDDEN_ROWS;
+				if (drawY >= HIDDEN_ROWS && drawY < TOTAL_ROWS) {
+					ctx.fillRect(
+						(piece.x + x) * BLOCK_SIZE,
+						(drawY - HIDDEN_ROWS) * BLOCK_SIZE,
+						BLOCK_SIZE - 1,
+						BLOCK_SIZE - 1
+					);
+				}
 			}
 		});
 	});
@@ -161,34 +186,18 @@ function drawNextPiece() {
 	});
 }
 
-function collisionTest(testX, testY) {
-	return piece.shape.some((row, y) => {
-		return row.some((value, x) => {
-			if (!value) return false;
-			const newX = testX + x;
-			const newY = testY + y;
-			// Para newY negativo, ignora colisão (zona de spawn oculta)
-			if (newY < 0) return false;
-			return (
-				newX < 0 ||
-				newX >= BOARD_WIDTH ||
-				newY >= BOARD_HEIGHT ||
-				board[newY]?.[newX]
-			);
-		});
-	});
-}
-
 function merge() {
 	let gameOverTriggered = false;
 	piece.shape.forEach((row, y) => {
 		row.forEach((value, x) => {
 			if (value) {
-				// Se alguma parte da peça for mesclada acima da área visível, é game over
-				if (piece.y + y < 0) {
+				const boardX = piece.x + x;
+				const boardY = piece.y + y + HIDDEN_ROWS;
+				// Se a peça lockar em uma linha acima da visível, dispara game over
+				if (boardY < HIDDEN_ROWS) {
 					gameOverTriggered = true;
 				} else {
-					board[piece.y + y][piece.x + x] = piece.color;
+					board[boardY][boardX] = piece.color;
 				}
 			}
 		});
@@ -204,21 +213,19 @@ function rotate() {
 	);
 	const oldX = piece.x;
 	const oldShape = piece.shape;
-	// Lista de offsets para tentar um "wall kick"
+	// Tenta aplicar "wall kicks"
 	const offsets = [0, -1, 1, -2, 2];
 	let kickSuccess = false;
 	for (let offset of offsets) {
-		piece.x = oldX + offset;
-		piece.shape = rotated;
-		if (!collisionTest(piece.x, piece.y)) {
-			kickSuccess = true;
-			// Se houver rotação bem-sucedida, reinicia o lockDelay
+		if (!collision({ shape: rotated, color: piece.color }, piece.x + offset, piece.y)) {
+			piece.x += offset;
+			piece.shape = rotated;
 			lockDelay = 0;
+			kickSuccess = true;
 			break;
 		}
 	}
 	if (!kickSuccess) {
-		// Reverte a rotação e a posição, se nenhum deslocamento funcionar
 		piece.shape = oldShape;
 		piece.x = oldX;
 	}
@@ -226,12 +233,13 @@ function rotate() {
 
 function clearLines() {
 	let linesCleared = 0;
-	for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
-		if (board[y].every((cell) => cell)) {
+	// Verifica apenas as linhas visíveis
+	for (let y = TOTAL_ROWS - 1; y >= HIDDEN_ROWS; y--) {
+		if (board[y].every(cell => cell)) {
 			board.splice(y, 1);
 			board.unshift(Array(BOARD_WIDTH).fill(0));
 			linesCleared++;
-			y++; // reavalia a mesma linha após o splice
+			y++; // reavalia a mesma linha após o unshift
 		}
 	}
 	if (linesCleared > 0) {
@@ -254,9 +262,7 @@ function gameOver() {
 }
 
 function resetGame() {
-	board = Array.from({ length: BOARD_HEIGHT }, () =>
-		Array(BOARD_WIDTH).fill(0)
-	);
+	board = Array.from({ length: TOTAL_ROWS }, () => Array(BOARD_WIDTH).fill(0));
 	score = 0;
 	level = 1;
 	document.getElementById("score").textContent = score;
@@ -278,19 +284,18 @@ function update(time = 0) {
 	lastTime = time;
 	dropCounter += deltaTime;
 
-	if (collisionTest(piece.x, piece.y + 1)) {
+	if (collision(piece, piece.x, piece.y + 1)) {
 		lockDelay += deltaTime;
 		if (lockDelay >= LOCK_DELAY_TIME) {
 			merge();
-			// Se o gameOver já foi disparado durante o merge, interrompe a atualização
-			if (paused) return;
+			if (paused) return; // se game over foi disparado durante o merge
 			clearLines();
 			piece = nextPiece;
 			nextPiece = createPiece();
 			drawNextPiece();
 			lockDelay = 0;
-			// Verifica se a nova peça, ao spawnar, já colide com o tabuleiro visível
-			if (collisionTest(piece.x, piece.y)) {
+			// Se a nova peça, ao spawnar, já colide na área visível, dispara game over
+			if (collision(piece, piece.x, piece.y)) {
 				gameOver();
 			}
 		}
@@ -310,35 +315,33 @@ function update(time = 0) {
 // Controles de teclado
 document.addEventListener("keydown", (event) => {
 	if (paused && event.key.toLowerCase() !== "p") return;
-
 	switch (event.keyCode) {
 		case 37: // Esquerda
 			piece.x--;
-			if (collisionTest(piece.x, piece.y)) piece.x++;
-			else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0; // reinicia o lockDelay se encostada
+			if (collision(piece, piece.x, piece.y)) piece.x++;
+			else if (collision(piece, piece.x, piece.y + 1)) lockDelay = 0;
 			break;
 		case 39: // Direita
 			piece.x++;
-			if (collisionTest(piece.x, piece.y)) piece.x--;
-			else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
+			if (collision(piece, piece.x, piece.y)) piece.x--;
+			else if (collision(piece, piece.x, piece.y + 1)) lockDelay = 0;
 			break;
 		case 40: // Soft Drop
 			piece.y++;
-			if (collisionTest(piece.x, piece.y)) piece.y--;
-			else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
+			if (collision(piece, piece.x, piece.y)) piece.y--;
+			else if (collision(piece, piece.x, piece.y + 1)) lockDelay = 0;
 			dropCounter = 0;
 			break;
 		case 38: // Rotacionar
 			rotate();
-			// Dentro da função rotate já reiniciamos o lockDelay se a rotação for bem-sucedida
 			break;
 		case 32: // Hard Drop
-			while (!collisionTest(piece.x, piece.y + 1)) {
+			while (!collision(piece, piece.x, piece.y + 1)) {
 				piece.y++;
 			}
 			dropCounter = dropInterval;
 			break;
-		case 80: // Pausar/retomar
+		case 80: // Pausar/Retomar
 			togglePause();
 			break;
 	}
@@ -348,8 +351,8 @@ document.addEventListener("keydown", (event) => {
 function addHoldListener(element, callback, delay = 100) {
 	let intervalId = null;
 	element.addEventListener("touchstart", (e) => {
-		e.preventDefault(); // previne comportamentos indesejados
-		callback(); // executa imediatamente
+		e.preventDefault();
+		callback();
 		intervalId = setInterval(callback, delay);
 	});
 	element.addEventListener("touchend", () => {
@@ -363,37 +366,30 @@ function addHoldListener(element, callback, delay = 100) {
 const btnLeft = document.getElementById("mobile-left");
 addHoldListener(btnLeft, () => {
 	piece.x--;
-	if (collisionTest(piece.x, piece.y)) piece.x++;
+	if (collision(piece, piece.x, piece.y)) piece.x++;
 });
-
 const btnRight = document.getElementById("mobile-right");
 addHoldListener(btnRight, () => {
 	piece.x++;
-	if (collisionTest(piece.x, piece.y)) piece.x--;
+	if (collision(piece, piece.x, piece.y)) piece.x--;
 });
-
 const btnDown = document.getElementById("mobile-down");
 addHoldListener(btnDown, () => {
 	piece.y++;
-	if (collisionTest(piece.x, piece.y)) piece.y--;
+	if (collision(piece, piece.x, piece.y)) piece.y--;
 	dropCounter = 0;
 });
-
-// Para os botões que não precisam repetir a ação, mantemos apenas touchstart
 document.getElementById("mobile-rotate").addEventListener("touchstart", (e) => {
 	e.preventDefault();
 	rotate();
 });
-
-document
-	.getElementById("mobile-hard-drop")
-	.addEventListener("touchstart", (e) => {
-		e.preventDefault();
-		while (!collisionTest(piece.x, piece.y + 1)) {
-			piece.y++;
-		}
-		dropCounter = dropInterval;
-	});
+document.getElementById("mobile-hard-drop").addEventListener("touchstart", (e) => {
+	e.preventDefault();
+	while (!collision(piece, piece.x, piece.y + 1)) {
+		piece.y++;
+	}
+	dropCounter = dropInterval;
+});
 
 // Overlay de Pausa / Game Over
 const overlay = document.getElementById("overlay");
@@ -402,7 +398,6 @@ const pauseBtn = document.getElementById("pause-btn");
 function showOverlay(message) {
 	overlay.classList.remove("hidden");
 	document.getElementById("overlay-message").textContent = message;
-	// Em Game Over, somente reinicia
 	if (message === "Game Over") {
 		pauseBtn.classList.add("hidden");
 	} else {
@@ -412,7 +407,6 @@ function showOverlay(message) {
 function hideOverlay() {
 	overlay.classList.add("hidden");
 }
-
 function togglePause() {
 	paused = !paused;
 	if (paused) {
