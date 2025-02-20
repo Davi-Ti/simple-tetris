@@ -255,45 +255,42 @@ function resetGame() {
 }
 
 function update(time = 0) {
-	if (paused) {
-	  requestAnimationFrame(update);
-	  return;
-	}
-	const deltaTime = time - lastTime;
-	lastTime = time;
-	dropCounter += deltaTime;
+    if (paused) {
+      requestAnimationFrame(update);
+      return;
+    }
+    const deltaTime = time - lastTime;
+    lastTime = time;
+    dropCounter += deltaTime;
   
-	if (dropCounter > dropInterval) {
-	  piece.y++;
-	  if (collisionTest(piece.x, piece.y)) {
-		piece.y--; // reverte o movimento
-  
-		// Inicia ou acumula o lock delay:
-		lockDelay += deltaTime;
-		if (lockDelay >= LOCK_DELAY_TIME) {
-		  merge();
-		  clearLines();
-		  piece = nextPiece;
-		  nextPiece = createPiece();
-		  drawNextPiece();
-		  // Reinicia o lockDelay
-		  lockDelay = 0;
-		  // Verifica se a nova peça já colide
-		  if (collisionTest(piece.x, piece.y)) {
-			gameOver();
-		  }
-		}
-	  } else {
-		// Se a peça desceu sem colisão, reinicia o lockDelay:
-		lockDelay = 0;
-	  }
-	  dropCounter = 0;
-	}
-	drawBoard();
-	drawGhostPiece();
-	drawPiece();
-	requestAnimationFrame(update);
-  }
+    // Se a peça está encostando no chão, acumula lockDelay continuamente
+    if (collisionTest(piece.x, piece.y + 1)) {
+        lockDelay += deltaTime;
+        if (lockDelay >= LOCK_DELAY_TIME) {
+            merge();
+            clearLines();
+            piece = nextPiece;
+            nextPiece = createPiece();
+            drawNextPiece();
+            lockDelay = 0;
+            if (collisionTest(piece.x, piece.y)) {
+                gameOver();
+            }
+        }
+    } else {
+        // Se a peça desceu com sucesso, reinicia o lockDelay
+        lockDelay = 0;
+        if (dropCounter > dropInterval) {
+            piece.y++;
+            dropCounter = 0;
+        }
+    }
+    drawBoard();
+    drawGhostPiece();
+    drawPiece();
+    requestAnimationFrame(update);
+    }
+
   
 
 // Controles de teclado
