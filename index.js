@@ -10,7 +10,7 @@ const BOARD_HEIGHT = 20;
 canvas.width = BLOCK_SIZE * BOARD_WIDTH;
 canvas.height = BLOCK_SIZE * BOARD_HEIGHT;
 let lockDelay = 0;
-const LOCK_DELAY_TIME = 500; // tempo em ms
+const LOCK_DELAY_TIME = 200; // tempo em ms
 
 let score = 0;
 let level = 1;
