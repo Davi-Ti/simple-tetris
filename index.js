@@ -295,36 +295,39 @@ function update(time = 0) {
 
 // Controles de teclado
 document.addEventListener("keydown", (event) => {
-	// Se estiver pausado, somente a tecla "P" (para retomar) é aceita
-	if (paused && event.key.toLowerCase() !== "p") return;
+    if (paused && event.key.toLowerCase() !== "p") return;
 
-	switch (event.keyCode) {
-		case 37: // Esquerda
-			piece.x--;
-			if (collisionTest(piece.x, piece.y)) piece.x++;
-			break;
-		case 39: // Direita
-			piece.x++;
-			if (collisionTest(piece.x, piece.y)) piece.x--;
-			break;
-		case 40: // Soft Drop
-			piece.y++;
-			if (collisionTest(piece.x, piece.y)) piece.y--;
-			dropCounter = 0;
-			break;
-		case 38: // Rotacionar
-			rotate();
-			break;
-		case 32: // Hard Drop (tecla Espaço)
-			while (!collisionTest(piece.x, piece.y + 1)) {
-				piece.y++;
-			}
-			dropCounter = dropInterval; // força a mesclagem na próxima atualização
-			break;
-		case 80: // "P" para pausar/retomar
-			togglePause();
-			break;
-	}
+    switch (event.keyCode) {
+        case 37: // Esquerda
+            piece.x--;
+            if (collisionTest(piece.x, piece.y)) piece.x++;
+            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0; // reinicia o lockDelay se encostada
+            break;
+        case 39: // Direita
+            piece.x++;
+            if (collisionTest(piece.x, piece.y)) piece.x--;
+            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
+            break;
+        case 40: // Soft Drop
+            piece.y++;
+            if (collisionTest(piece.x, piece.y)) piece.y--;
+            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
+            dropCounter = 0;
+            break;
+        case 38: // Rotacionar
+            rotate();
+            // Dentro da função rotate já reiniciamos o lockDelay se a rotação for bem-sucedida
+            break;
+        case 32: // Hard Drop
+            while (!collisionTest(piece.x, piece.y + 1)) {
+                piece.y++;
+            }
+            dropCounter = dropInterval;
+            break;
+        case 80: // Pausar/retomar
+            togglePause();
+            break;
+    }
 });
 
 // Controles Mobile
