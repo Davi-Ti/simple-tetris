@@ -9,8 +9,6 @@ const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 canvas.width = BLOCK_SIZE * BOARD_WIDTH;
 canvas.height = BLOCK_SIZE * BOARD_HEIGHT;
-let lockDelay = 0;
-const LOCK_DELAY_TIME = 500; // tempo em ms
 
 let score = 0;
 let level = 1;
@@ -185,29 +183,14 @@ function merge() {
 
 function rotate() {
 	const rotated = piece.shape[0].map((_, i) =>
-	  piece.shape.map((row) => row[i]).reverse()
+		piece.shape.map((row) => row[i]).reverse()
 	);
-	const oldX = piece.x;
-	const oldShape = piece.shape;
-	// Lista de offsets para tentar um "wall kick"
-	const offsets = [0, -1, 1, -2, 2];
-	let kickSuccess = false;
-	for (let offset of offsets) {
-	  piece.x = oldX + offset;
-	  piece.shape = rotated;
-	  if (!collisionTest(piece.x, piece.y)) {
-		kickSuccess = true;
-		// Se houver rotação bem-sucedida, reinicia o lockDelay
-		lockDelay = 0;
-		break;
-	  }
+	const previousShape = piece.shape;
+	piece.shape = rotated;
+	if (collisionTest(piece.x, piece.y)) {
+		piece.shape = previousShape;
 	}
-	if (!kickSuccess) {
-	  // Reverte a rotação e a posição, se nenhum deslocamento funcionar
-	  piece.shape = oldShape;
-	  piece.x = oldX;
-	}
-  }
+}
 
 function clearLines() {
 	let linesCleared = 0;
@@ -256,45 +239,32 @@ function resetGame() {
 
 function update(time = 0) {
 	if (paused) {
-	  requestAnimationFrame(update);
-	  return;
+		requestAnimationFrame(update);
+		return;
 	}
 	const deltaTime = time - lastTime;
 	lastTime = time;
 	dropCounter += deltaTime;
-  
 	if (dropCounter > dropInterval) {
-	  piece.y++;
-	  if (collisionTest(piece.x, piece.y)) {
-		piece.y--; // reverte o movimento
-  
-		// Inicia ou acumula o lock delay:
-		lockDelay += deltaTime;
-		if (lockDelay >= LOCK_DELAY_TIME) {
-		  merge();
-		  clearLines();
-		  piece = nextPiece;
-		  nextPiece = createPiece();
-		  drawNextPiece();
-		  // Reinicia o lockDelay
-		  lockDelay = 0;
-		  // Verifica se a nova peça já colide
-		  if (collisionTest(piece.x, piece.y)) {
-			gameOver();
-		  }
+		piece.y++;
+		if (collisionTest(piece.x, piece.y)) {
+			piece.y--;
+			merge();
+			clearLines();
+			piece = nextPiece;
+			nextPiece = createPiece();
+			drawNextPiece();
+			if (collisionTest(piece.x, piece.y)) {
+				gameOver();
+			}
 		}
-	  } else {
-		// Se a peça desceu sem colisão, reinicia o lockDelay:
-		lockDelay = 0;
-	  }
-	  dropCounter = 0;
+		dropCounter = 0;
 	}
 	drawBoard();
 	drawGhostPiece();
 	drawPiece();
 	requestAnimationFrame(update);
-  }
-  
+}
 
 // Controles de teclado
 document.addEventListener("keydown", (event) => {
