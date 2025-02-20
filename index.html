@@ -10,6 +10,18 @@
 		<title>Tetris</title>
 		<!-- Importa Tailwind via CDN -->
 		<script src="https://cdn.tailwindcss.com"></script>
+		<!-- Importa Font Awesome -->
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+			integrity="sha512-papNXe1bHXXoJGbllLcp+2SfgS7YtJgn8Vv7a6jwOv6bqzh8dkq6KMX6yH8J2WN7o/Ffqkfg3pFQY4H8+vY1Bw=="
+			crossorigin="anonymous"
+			referrerpolicy="no-referrer"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+		/>
 		<link rel="stylesheet" href="style.css" />
 	</head>
 	<body
@@ -65,19 +77,19 @@
 		<div
 			class="mobile-controls fixed bottom-5 w-full flex justify-between items-end px-5 md:hidden"
 		>
-			<!-- Coluna Esquerda: Rotate (canto superior esquerdo) e Left (canto inferior esquerdo) -->
+			<!-- Coluna Esquerda: Rotate e Left -->
 			<div class="flex flex-col items-start space-y-4">
 				<button
 					class="mobile-btn bg-gray-700 p-5 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-rotate"
 				>
-					↻
+					<i class="fas fa-rotate-right"></i>
 				</button>
 				<button
 					class="mobile-btn bg-gray-700 px-8 py-5 rounded-full text-4xl font-extrabold hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-left"
 				>
-					←
+					<i class="fas fa-arrow-left"></i>
 				</button>
 			</div>
 			<!-- Botão Central: Hard Drop -->
@@ -86,22 +98,22 @@
 					class="mobile-btn bg-gray-700 py-2 px-5 font-extrabold rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-hard-drop"
 				>
-					⤓⤓
+					<i class="fas fa-level-down-alt"></i>
 				</button>
 			</div>
-			<!-- Coluna Direita: Down (canto superior direito) e Right (canto inferior direito) -->
+			<!-- Coluna Direita: Down e Right -->
 			<div class="flex flex-col items-end space-y-4">
 				<button
 					class="mobile-btn bg-gray-700 p-5 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-down"
 				>
-					↓
+					<i class="fas fa-arrow-down"></i>
 				</button>
 				<button
 					class="mobile-btn bg-gray-700 px-8 py-5 rounded-full text-4xl font-extrabold hover:bg-gray-600 active:bg-gray-800 focus:outline-none shadow-md transition transform duration-100 ease-in-out active:scale-95"
 					id="mobile-right"
 				>
-					→
+					<i class="fas fa-arrow-right"></i>
 				</button>
 			</div>
 		</div>
