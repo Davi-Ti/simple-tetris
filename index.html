@@ -1,270 +1,129 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<!-- Desabilita o zoom no mobile -->
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
 		<title>Tetris</title>
+		<!-- Importa Tailwind via CDN -->
 		<script src="https://cdn.tailwindcss.com"></script>
+		<link rel="stylesheet" href="style.css" />
 	</head>
 	<body
-		class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen"
+		class="bg-gray-900 text-white font-sans flex flex-col items-center h-screen overflow-hidden"
 	>
-		<div class="text-center">
-			<h1 class="text-4xl font-bold mb-4">Tetris</h1>
-			<div class="grid grid-cols-2 gap-4">
-				<div>
-					<canvas id="tetris" class="border-2 border-white"></canvas>
-				</div>
-				<div class="flex flex-col items-start">
-					<div class="mb-4">
-						<h2 class="text-2xl">Próxima Peça:</h2>
-						<canvas id="nextPiece" class="border-2 border-white"></canvas>
-					</div>
-					<div class="mb-4">
-						<h2 class="text-2xl">Pontuação:</h2>
-						<p id="score" class="text-xl">0</p>
-					</div>
-					<div class="mb-4">
-						<h2 class="text-2xl">High Score:</h2>
-						<p id="highScore" class="text-xl">0</p>
-					</div>
-					<div class="mb-4">
-						<h2 class="text-2xl">Nível:</h2>
-						<p id="level" class="text-xl">1</p>
-					</div>
-					<div class="flex space-x-2">
-						<button id="pauseBtn" class="bg-blue-500 px-4 py-2 rounded">
-							Pause
-						</button>
-						<button id="restartBtn" class="bg-red-500 px-4 py-2 rounded">
-							Restart
-						</button>
-					</div>
+		<!-- Header com Score, Título e High Score -->
+		<header class="w-full flex items-center justify-between p-4">
+			<div id="score-info" class="text-lg">
+				Score: <span id="score">0</span>
+			</div>
+			<h1 id="title" class="text-3xl cursor-pointer select-none">TETRIS</h1>
+			<div id="highscore-info" class="text-lg">
+				High Score: <span id="highscore">0</span>
+			</div>
+			<div id="level-info" class="text-lg">
+				Level: <span id="level">1</span>
+			</div>
+		</header>
+
+		<!-- Wrapper para o conteúdo do jogo (centralizado) -->
+		<div
+			id="game-wrapper"
+			class="w-full flex justify-center"
+			style="padding-bottom: 120px"
+		>
+			<div
+				id="game-container"
+				class="flex gap-5 p-5 flex-col sm:flex-row items-center"
+			>
+				<canvas
+					id="board"
+					class="border-2 border-white"
+					width="300"
+					height="600"
+				></canvas>
+				<div id="next-piece-container" class="flex flex-col items-center gap-2">
+					<!-- O texto "Next Piece:" ficará oculto em mobile -->
+					<div class="hidden md:block">Next Piece:</div>
+					<canvas
+						id="next"
+						width="100"
+						height="100"
+						class="border-2 border-white"
+					></canvas>
 				</div>
 			</div>
 		</div>
 
+		<!-- Controles Mobile - layout atualizado -->
+		<div
+			class="mobile-controls fixed bottom-5 w-full flex justify-between items-end px-5 md:hidden"
+		>
+			<!-- Coluna Esquerda: Rotate (canto superior esquerdo) e Left (canto inferior esquerdo) -->
+			<div class="flex flex-col items-start space-y-4">
+				<button
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					id="mobile-rotate"
+				>
+					↻
+				</button>
+				<button
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					id="mobile-left"
+				>
+					←
+				</button>
+			</div>
+			<!-- Botão Central: Hard Drop -->
+			<div class="absolute left-1/2 transform -translate-x-1/2 bottom-10">
+				<button
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					id="mobile-hard-drop"
+				>
+					⤓
+				</button>
+			</div>
+			<!-- Coluna Direita: Down (canto superior direito) e Right (canto inferior direito) -->
+			<div class="flex flex-col items-end space-y-4">
+				<button
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					id="mobile-down"
+				>
+					↓
+				</button>
+				<button
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					id="mobile-right"
+				>
+					→
+				</button>
+			</div>
+		</div>
+
+		<!-- Overlay para Pausa e Game Over -->
+		<div
+			id="overlay"
+			class="hidden fixed inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50"
+		>
+			<h2 id="overlay-message" class="text-4xl mb-4"></h2>
+			<button id="restart-btn" class="bg-blue-600 px-4 py-2 rounded text-xl">
+				Restart
+			</button>
+			<button
+				id="pause-btn"
+				class="bg-yellow-500 px-4 py-2 rounded text-xl mt-2"
+			>
+				Resume
+			</button>
+		</div>
+
+		<script src="index.js"></script>
 		<script>
-			const canvas = document.getElementById('tetris');
-			const context = canvas.getContext('2d');
-			const nextPieceCanvas = document.getElementById('nextPiece');
-			const nextPieceContext = nextPieceCanvas.getContext('2d');
-
-			const ROWS = 20;
-			const COLS = 10;
-			const BLOCK_SIZE = 30;
-			const LOCK_DELAY = 500;
-
-			canvas.width = COLS * BLOCK_SIZE;
-			canvas.height = ROWS * BLOCK_SIZE;
-			nextPieceCanvas.width = 4 * BLOCK_SIZE;
-			nextPieceCanvas.height = 4 * BLOCK_SIZE;
-
-			context.scale(BLOCK_SIZE, BLOCK_SIZE);
-			nextPieceContext.scale(BLOCK_SIZE, BLOCK_SIZE);
-
-			const PIECES = [
-			    [I, [[0, -1], [0, 0], [0, 1], [0, 2]], // I
-			    [O, [[0, 0], [0, 1], [1, 0], [1, 1]], // O
-			    [T, [[-1, 0], [0, 0], [1, 0], [0, 1]], // T
-			    [L, [[-1, 0], [0, 0], [1, 0], [1, 1]], // L
-			    [J, [[-1, 1], [0, 1], [1, 1], [1, 0]], // J
-			    [S, [[0, 0], [1, 0], [1, 1], [2, 1]], // S
-			    [Z, [[0, 1], [1, 1], [1, 0], [2, 0]]] // Z
-			];
-
-			let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-			let piece = null;
-			let nextPiece = null;
-			let score = 0;
-			let highScore = localStorage.getItem('highScore') || 0;
-			let level = 1;
-			let dropCounter = 0;
-			let lastTime = 0;
-			let isPaused = false;
-			let lockDelayCounter = 0;
-
-			document.getElementById('highScore').innerText = highScore;
-
-			function createPiece() {
-			    const randomIndex = Math.floor(Math.random() * PIECES.length);
-			    const [type, shape] = PIECES[randomIndex];
-			    return { type, shape, pos: { x: Math.floor(COLS / 2) - 1, y: 0 } };
-			}
-
-			function drawPiece(piece, context) {
-			    piece.shape.forEach(([x, y]) => {
-			        context.fillStyle = piece.type;
-			        context.fillRect(piece.pos.x + x, piece.pos.y + y, 1, 1);
-			    });
-			}
-
-			function drawBoard() {
-			    context.fillStyle = '#000';
-			    context.fillRect(0, 0, COLS, ROWS);
-
-			    board.forEach((row, y) => {
-			        row.forEach((value, x) => {
-			            if (value) {
-			                context.fillStyle = value;
-			                context.fillRect(x, y, 1, 1);
-			            }
-			        });
-			    });
-
-			    if (piece) {
-			        drawPiece(piece, context);
-			    }
-			}
-
-			function drawNextPiece() {
-			    nextPieceContext.clearRect(0, 0, 4, 4);
-			    if (nextPiece) {
-			        drawPiece(nextPiece, nextPieceContext);
-			    }
-			}
-
-			function updateScore(lines) {
-			    const points = [0, 40, 100, 300, 1200];
-			    score += points[lines] * level;
-			    document.getElementById('score').innerText = score;
-
-			    if (score > highScore) {
-			        highScore = score;
-			        localStorage.setItem('highScore', highScore);
-			        document.getElementById('highScore').innerText = highScore;
-			    }
-
-			    if (score >= level * 1000) {
-			        level++;
-			        document.getElementById('level').innerText = level;
-			    }
-			}
-
-			function clearLines() {
-			    let lines = 0;
-			    board.forEach((row, y) => {
-			        if (row.every(value => value !== 0)) {
-			            lines++;
-			            board.splice(y, 1);
-			            board.unshift(Array(COLS).fill(0));
-			        }
-			    });
-			    if (lines > 0) {
-			        updateScore(lines);
-			    }
-			}
-
-			function drop() {
-			    piece.pos.y++;
-			    if (collide()) {
-			        piece.pos.y--;
-			        lockDelayCounter += LOCK_DELAY;
-			        if (lockDelayCounter >= LOCK_DELAY) {
-			            solidify();
-			            clearLines();
-			            piece = nextPiece;
-			            nextPiece = createPiece();
-			            lockDelayCounter = 0;
-			        }
-			    }
-			    dropCounter = 0;
-			}
-
-			function hardDrop() {
-			    while (!collide()) {
-			        piece.pos.y++;
-			    }
-			    piece.pos.y--;
-			    solidify();
-			    clearLines();
-			    piece = nextPiece;
-			    nextPiece = createPiece();
-			}
-
-			function solidify() {
-			    piece.shape.forEach(([x, y]) => {
-			        if (piece.pos.y + y >= 0) {
-			            board[piece.pos.y + y][piece.pos.x + x] = piece.type;
-			        }
-			    });
-			}
-
-			function collide() {
-			    return piece.shape.some(([x, y]) => {
-			        const col = piece.pos.x + x;
-			        const row = piece.pos.y + y;
-			        return col < 0 || col >= COLS || row >= ROWS || (row >= 0 && board[row][col]);
-			    });
-			}
-
-			function rotate(piece) {
-			    const newShape = piece.shape.map(([x, y]) => [-y, x]);
-			    const oldShape = piece.shape;
-			    piece.shape = newShape;
-			    if (collide()) {
-			        piece.shape = oldShape;
-			    }
-			}
-
-			function update(time = 0) {
-			    if (isPaused) return;
-
-			    const deltaTime = time - lastTime;
-			    lastTime = time;
-
-			    dropCounter += deltaTime;
-			    if (dropCounter > 1000 / level) {
-			        drop();
-			    }
-
-			    drawBoard();
-			    drawNextPiece();
-			    requestAnimationFrame(update);
-			}
-
-			function handleKeyDown(event) {
-			    if (event.key === 'ArrowLeft') {
-			        piece.pos.x--;
-			        if (collide()) {
-			            piece.pos.x++;
-			        }
-			    } else if (event.key === 'ArrowRight') {
-			        piece.pos.x++;
-			        if (collide()) {
-			            piece.pos.x--;
-			        }
-			    } else if (event.key === 'ArrowDown') {
-			        drop();
-			    } else if (event.key === 'ArrowUp') {
-			        rotate(piece);
-			    } else if (event.key === ' ') {
-			        hardDrop();
-			    }
-			}
-
-			document.addEventListener('keydown', handleKeyDown);
-
-			document.getElementById('pauseBtn').addEventListener('click', () => {
-			    isPaused = !isPaused;
-			    document.getElementById('pauseBtn').innerText = isPaused ? 'Resume' : 'Pause';
-			});
-
-			document.getElementById('restartBtn').addEventListener('click', () => {
-			    board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-			    piece = createPiece();
-			    nextPiece = createPiece();
-			    score = 0;
-			    level = 1;
-			    document.getElementById('score').innerText = score;
-			    document.getElementById('level').innerText = level;
-			    isPaused = false;
-			    document.getElementById('pauseBtn').innerText = 'Pause';
-			});
-
-			piece = createPiece();
-			nextPiece = createPiece();
-			update();
+			// Adiciona a funcionalidade de pause ao clicar no título "TETRIS"
+			document.getElementById("title").addEventListener("click", togglePause);
 		</script>
 	</body>
 </html>
