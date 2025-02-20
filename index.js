@@ -255,79 +255,79 @@ function resetGame() {
 }
 
 function update(time = 0) {
-    if (paused) {
-      requestAnimationFrame(update);
-      return;
-    }
-    const deltaTime = time - lastTime;
-    lastTime = time;
-    dropCounter += deltaTime;
+	if (paused) {
+	  requestAnimationFrame(update);
+	  return;
+	}
+	const deltaTime = time - lastTime;
+	lastTime = time;
+	dropCounter += deltaTime;
   
-    // Se a peça está encostando no chão, acumula lockDelay continuamente
-    if (collisionTest(piece.x, piece.y + 1)) {
-        lockDelay += deltaTime;
-        if (lockDelay >= LOCK_DELAY_TIME) {
-            merge();
-            clearLines();
-            piece = nextPiece;
-            nextPiece = createPiece();
-            drawNextPiece();
-            lockDelay = 0;
-            if (collisionTest(piece.x, piece.y)) {
-                gameOver();
-            }
-        }
-    } else {
-        // Se a peça desceu com sucesso, reinicia o lockDelay
-        lockDelay = 0;
-        if (dropCounter > dropInterval) {
-            piece.y++;
-            dropCounter = 0;
-        }
-    }
-    drawBoard();
-    drawGhostPiece();
-    drawPiece();
-    requestAnimationFrame(update);
-    }
-
+	if (dropCounter > dropInterval) {
+	  piece.y++;
+	  if (collisionTest(piece.x, piece.y)) {
+		piece.y--; // reverte o movimento
+  
+		// Inicia ou acumula o lock delay:
+		lockDelay += deltaTime;
+		if (lockDelay >= LOCK_DELAY_TIME) {
+		  merge();
+		  clearLines();
+		  piece = nextPiece;
+		  nextPiece = createPiece();
+		  drawNextPiece();
+		  // Reinicia o lockDelay
+		  lockDelay = 0;
+		  // Verifica se a nova peça já colide
+		  if (collisionTest(piece.x, piece.y)) {
+			gameOver();
+		  }
+		}
+	  } else {
+		// Se a peça desceu sem colisão, reinicia o lockDelay:
+		lockDelay = 0;
+	  }
+	  dropCounter = 0;
+	}
+	drawBoard();
+	drawGhostPiece();
+	drawPiece();
+	requestAnimationFrame(update);
+  }
   
 
 // Controles de teclado
 document.addEventListener("keydown", (event) => {
-    if (paused && event.key.toLowerCase() !== "p") return;
+	// Se estiver pausado, somente a tecla "P" (para retomar) é aceita
+	if (paused && event.key.toLowerCase() !== "p") return;
 
-    switch (event.keyCode) {
-        case 37: // Esquerda
-            piece.x--;
-            if (collisionTest(piece.x, piece.y)) piece.x++;
-            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0; // reinicia o lockDelay se encostada
-            break;
-        case 39: // Direita
-            piece.x++;
-            if (collisionTest(piece.x, piece.y)) piece.x--;
-            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
-            break;
-        case 40: // Soft Drop
-            piece.y++;
-            if (collisionTest(piece.x, piece.y)) piece.y--;
-            else if (collisionTest(piece.x, piece.y + 1)) lockDelay = 0;
-            dropCounter = 0;
-            break;
-        case 38: // Rotacionar
-            rotate();
-            // Dentro da função rotate já reiniciamos o lockDelay se a rotação for bem-sucedida
-            break;
-        case 32: // Hard Drop
-            while (!collisionTest(piece.x, piece.y + 1)) {
-                piece.y++;
-            }
-            dropCounter = dropInterval;
-            break;
-        case 80: // Pausar/retomar
-            togglePause();
-            break;
-    }
+	switch (event.keyCode) {
+		case 37: // Esquerda
+			piece.x--;
+			if (collisionTest(piece.x, piece.y)) piece.x++;
+			break;
+		case 39: // Direita
+			piece.x++;
+			if (collisionTest(piece.x, piece.y)) piece.x--;
+			break;
+		case 40: // Soft Drop
+			piece.y++;
+			if (collisionTest(piece.x, piece.y)) piece.y--;
+			dropCounter = 0;
+			break;
+		case 38: // Rotacionar
+			rotate();
+			break;
+		case 32: // Hard Drop (tecla Espaço)
+			while (!collisionTest(piece.x, piece.y + 1)) {
+				piece.y++;
+			}
+			dropCounter = dropInterval; // força a mesclagem na próxima atualização
+			break;
+		case 80: // "P" para pausar/retomar
+			togglePause();
+			break;
+	}
 });
 
 // Controles Mobile
