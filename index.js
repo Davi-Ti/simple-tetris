@@ -263,7 +263,6 @@ function update(time = 0) {
     lastTime = time;
     dropCounter += deltaTime;
   
-    // Se a peça está encostando no chão, acumula lockDelay continuamente
     if (collisionTest(piece.x, piece.y + 1)) {
         lockDelay += deltaTime;
         if (lockDelay >= LOCK_DELAY_TIME) {
@@ -278,7 +277,6 @@ function update(time = 0) {
             }
         }
     } else {
-        // Se a peça desceu com sucesso, reinicia o lockDelay
         lockDelay = 0;
         if (dropCounter > dropInterval) {
             piece.y++;
@@ -289,7 +287,8 @@ function update(time = 0) {
     drawGhostPiece();
     drawPiece();
     requestAnimationFrame(update);
-    }
+}
+
 
   
 
