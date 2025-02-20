@@ -16,11 +16,13 @@
 		class="bg-gray-900 text-white font-sans flex flex-col items-center h-screen overflow-hidden"
 	>
 		<!-- Header com Score, Título e High Score -->
-		<header class="w-full flex items-center justify-between p-4">
+		<header
+			class="w-full flex items-center justify-between p-2 padding-bottom-0 md:padding-bottom-0 mb-0 md:mb-1"
+		>
+			<h1 id="title" class="text-3xl cursor-pointer select-none">TETRIS</h1>
 			<div id="score-info" class="text-lg">
 				Score: <span id="score">0</span>
 			</div>
-			<h1 id="title" class="text-3xl cursor-pointer select-none">TETRIS</h1>
 			<div id="highscore-info" class="text-lg">
 				High Score: <span id="highscore">0</span>
 			</div>
@@ -32,12 +34,12 @@
 		<!-- Wrapper para o conteúdo do jogo (centralizado) -->
 		<div
 			id="game-wrapper"
-			class="w-full flex justify-center"
+			class="w-full flex justify-center mt-0"
 			style="padding-bottom: 120px"
 		>
 			<div
 				id="game-container"
-				class="flex gap-5 p-5 flex-col sm:flex-row items-center"
+				class="flex gap-5 py-2 flex-col sm:flex-row items-center mt-0"
 			>
 				<canvas
 					id="board"
@@ -65,22 +67,22 @@
 			<!-- Coluna Esquerda: Rotate (canto superior esquerdo) e Left (canto inferior esquerdo) -->
 			<div class="flex flex-col items-start space-y-4">
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
 					id="mobile-rotate"
 				>
 					↻
 				</button>
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
 					id="mobile-left"
 				>
 					←
 				</button>
 			</div>
 			<!-- Botão Central: Hard Drop -->
-			<div class="absolute left-1/2 transform -translate-x-1/2 bottom-10">
+			<div class="absolute left-1/2 transform -translate-x-1/2 bottom-20">
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
 					id="mobile-hard-drop"
 				>
 					⤓
@@ -89,13 +91,13 @@
 			<!-- Coluna Direita: Down (canto superior direito) e Right (canto inferior direito) -->
 			<div class="flex flex-col items-end space-y-4">
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
 					id="mobile-down"
 				>
 					↓
 				</button>
 				<button
-					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl"
+					class="mobile-btn bg-gray-700 p-4 rounded-full text-3xl hover:bg-gray-600 active:bg-gray-800 transition duration-150 ease-in-out"
 					id="mobile-right"
 				>
 					→
